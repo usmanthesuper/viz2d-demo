@@ -1,4 +1,4 @@
-# Vite + React App
+# Viz2d Demo App
 
 This project is built using **Vite** and **React**, with **pnpm** as the package manager.
 
