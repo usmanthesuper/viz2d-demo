@@ -17,7 +17,8 @@ import {
 } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {VisualizerType} from "./index"
-import { useVisualizer, TextureInfo } from "./use-visualizer";
+import { useVisualizer } from "./use-visualizer";
+import { TextureInfo } from "@viz2d/sdk";
 
 /* ---------------------------------------------------
  Helpers
@@ -124,22 +125,22 @@ const SegmentTextureControls = ({
 
     <TextureSlider
       label="Move X"
-      value={tex.offset_x}
+      value={tex.offsetX}
       min={-2}
       max={2}
       step={0.05}
       unit="m"
-      onChange={(v) => onUpdate(segmentId, { offset_x: v })}
+      onChange={(v) => onUpdate(segmentId, { offsetX: v })}
     />
 
     <TextureSlider
       label="Move Y"
-      value={tex.offset_y}
+      value={tex.offsetY}
       min={-2}
       max={2}
       step={0.05}
       unit="m"
-      onChange={(v) => onUpdate(segmentId, { offset_y: v })}
+      onChange={(v) => onUpdate(segmentId, { offsetY: v })}
     />
   </div>
 );
@@ -280,7 +281,7 @@ export default function VisualizerMain({
     isTextureLoading,
     imageSize,
     segMap,
-  } = useVisualizer();
+  } = useVisualizer([]);
 
   const [selectedSeg, setSelectedSeg] = useState<number | null>(null);
   const [selectorOpen, setSelectorOpen] = useState(false);
@@ -383,22 +384,22 @@ export default function VisualizerMain({
             >
               <div
                 className="p-2 cursor-pointer font-medium flex justify-between items-center"
-                onMouseOver={() => setHoverSeg(seg.segment_id)}
+                onMouseOver={() => setHoverSeg(seg.id)}
                 onMouseLeave={() => setHoverSeg(null)}
                 onClick={() => {
-                  setSelectedSeg(seg.segment_id);
+                  setSelectedSeg(seg.id);
                   setSelectorOpen(true);
                 }}
               >
                 <div className="flex gap-2 items-center">
-                <img src={seg.masked_image} className="w-16 object-contain"/>
-                {seg.class_name}
+                <img src={seg.maskedImage} className="w-16 object-contain"/>
+                {seg.className}
                 </div>
                 {seg.texture &&
                   <Button
                     variant="destructive"
                     size='icon'
-                    onClick={(e) => {e.stopPropagation();removeSegmentTexture(seg.segment_id)}}
+                    onClick={(e) => {e.stopPropagation();removeSegmentTexture(seg.id)}}
                   ><Trash2 /></Button>
                 }
               </div>
@@ -406,7 +407,7 @@ export default function VisualizerMain({
               {seg.texture && (
                 <div className="p-2 border-t">
                 <SegmentTextureControls
-                  segmentId={seg.segment_id}
+                  segmentId={seg.id}
                   tex={seg.texture}
                   config={config}
                   onUpdate={updateSegmentTexture}

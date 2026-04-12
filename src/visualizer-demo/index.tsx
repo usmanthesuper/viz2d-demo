@@ -3,10 +3,9 @@
 import { useEffect, useState } from "react"
 import VisualizerMain from "./visualizer-main"
 import { Button } from "@/components/ui/button"
-import { ArrowUpRight, HelpCircle, Loader, Loader2, Upload } from "lucide-react"
+import { ArrowUpRight, FileIcon, Image, Loader, Loader2, Upload } from "lucide-react"
 import { Suspense } from "react"
 import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 
 type FileState = {
   loading: boolean
@@ -15,73 +14,73 @@ type FileState = {
 }
 
 export const config = {
-    companyLogo: '/assets/logo.png',
-    websiteUrl: 'https://viz2d.com',
-    name: 'Viz2D',
-    sampleFiles: [
-        {
-            name: 'Living Room 1',
-            image: '/assets/samples/1.jpg',
-            viz2dFile: '/assets/samples/1.viz2d'
-        },
-        {
-            name: 'Living Room 2',
-            image: '/assets/samples/2.jpg',
-            viz2dFile: '/assets/samples/2.viz2d'
-        },
-        {
-            name: 'Bed Room',
-            image: '/assets/samples/3.jpg',
-            viz2dFile: '/assets/samples/3.viz2d'
-        },
-        {
-            name: 'Bathoom',
-            image: '/assets/samples/4.jpg',
-            viz2dFile: '/assets/samples/4.viz2d'
-        },
-        {
-            name: 'Kitchen',
-            image: '/assets/samples/5.jpg',
-            viz2dFile: '/assets/samples/5.viz2d'
-        },
-        {
-            name: 'Garage',
-            image: '/assets/samples/6.jpg',
-            viz2dFile: '/assets/samples/6.viz2d'
-        },
-        {
-            name: 'Terasse',
-            image: '/assets/samples/7.jpg',
-            viz2dFile: '/assets/samples/7.viz2d'
-        },
-        {
-            name: 'Stairs',
-            image: '/assets/samples/8.jpg',
-            viz2dFile: '/assets/samples/8.viz2d'
-        },
-        {
-            name: 'Balcony',
-            image: '/assets/samples/9.jpg',
-            viz2dFile: '/assets/samples/9.viz2d'
-        },
-        
-    ],
-    textureKeywords: ['wall','floor'],
-    textures: [
-        {
-            image: '/assets/samples/textures/1.jpg',
-            scale: 1,
-            keywords: ['wall','floor']
-        },
-        {
-            image: '/assets/samples/textures/2.jpg',
-            scale: 1,
-            keywords: ['wall']
-        }
-    ],
-    useCredits: false,
-    allowScaling:true,
-    allowUploadingTextures: true,
+  companyLogo: '/assets/logo.png',
+  websiteUrl: 'https://viz2d.com',
+  name: 'Viz2D',
+  sampleFiles: [
+    {
+      name: 'Living Room 1',
+      image: '/assets/samples/1.jpg',
+      viz2dFile: '/assets/samples/1.viz2d'
+    },
+    {
+      name: 'Living Room 2',
+      image: '/assets/samples/2.jpg',
+      viz2dFile: '/assets/samples/2.viz2d'
+    },
+    {
+      name: 'Bed Room',
+      image: '/assets/samples/3.jpg',
+      viz2dFile: '/assets/samples/3.viz2d'
+    },
+    {
+      name: 'Bathoom',
+      image: '/assets/samples/4.jpg',
+      viz2dFile: '/assets/samples/4.viz2d'
+    },
+    {
+      name: 'Kitchen',
+      image: '/assets/samples/5.jpg',
+      viz2dFile: '/assets/samples/5.viz2d'
+    },
+    {
+      name: 'Garage',
+      image: '/assets/samples/6.jpg',
+      viz2dFile: '/assets/samples/6.viz2d'
+    },
+    {
+      name: 'Terasse',
+      image: '/assets/samples/7.jpg',
+      viz2dFile: '/assets/samples/7.viz2d'
+    },
+    {
+      name: 'Stairs',
+      image: '/assets/samples/8.jpg',
+      viz2dFile: '/assets/samples/8.viz2d'
+    },
+    {
+      name: 'Balcony',
+      image: '/assets/samples/9.jpg',
+      viz2dFile: '/assets/samples/9.viz2d'
+    },
+
+  ],
+  textureKeywords: ['wall', 'floor'],
+  textures: [
+    {
+      image: '/assets/samples/textures/1.jpg',
+      scale: 1,
+      keywords: ['wall', 'floor']
+    },
+    {
+      image: '/assets/samples/textures/2.jpg',
+      scale: 1,
+      keywords: ['wall']
+    }
+  ],
+  useCredits: false,
+  allowScaling: true,
+  allowUploadingTextures: true,
 }
 
 export type VisualizerType = typeof config
@@ -101,14 +100,14 @@ function Main({ config }: { config: VisualizerType }) {
   })
 
   const [searchParams] = useSearchParams()
-  const {pathname} = useLocation()
+  const { pathname } = useLocation()
   const navigate = useNavigate()
   const fileUrl = searchParams.get("fileUrl")
 
   useEffect(() => {
     if (fileUrl) {
       loadFromUrl(fileUrl)
-      navigate(pathname,{replace:true})
+      navigate(pathname, { replace: true })
     }
   }, [fileUrl])
 
@@ -183,7 +182,20 @@ function Main({ config }: { config: VisualizerType }) {
             <img src={config.companyLogo} className="mx-auto mb-5 h-14 max-w-40 object-contain" />
 
             <div className="flex gap-5 justify-center flex-wrap">
-              <div className="flex gap-1">
+              <div className="border rounded p-4 flex flex-col item-center">
+                <div className="flex gap-2 font-bold mb-2 text-lg"><Image />Upload Image</div>
+                <Button className="bg-cyan-500 hover:bg-cyan-600 text-black" asChild>
+                  <a
+                    href='https://viz2d.com/convert'
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Open Converter <ArrowUpRight />
+                  </a>
+                </Button>
+              </div>
+              <div className="border rounded p-4 flex flex-col item-center">
+                <div className="flex gap-2 font-bold mb-2 text-lg"><FileIcon />Load Viz2D File</div>
                 <Button asChild>
                   <label htmlFor="fileinput" className="cursor-pointer">
                     <input
@@ -200,83 +212,40 @@ function Main({ config }: { config: VisualizerType }) {
                       }}
                     />
                     <Upload />
-                    Load Viz2d File
+                    Upload
                   </label>
                 </Button>
-                <ConvertInfo />
-              </div>
-            </div>
-
-            <div>OR</div>
-
-            <div>
-              <div className="font-semibold mb-4 text-xl text-center">
-                Try our demo images
               </div>
 
-              <div className="flex gap-5 flex-wrap justify-center">
-                {config.sampleFiles.map((sample: any, index) => (
-                  <Link
-                    key={index}
-                    to={pathname + '?fileUrl=' + sample.viz2dFile}
-                    className="border p-1 w-80 rounded cursor-pointer hover:scale-105 duration-200"
-                  >
-                    <img
-                      src={sample.image}
-                      className="w-full aspect-video object-cover"
-                    />
-                    <div className="text-lg font-semibold mt-2 text-center">
-                      {sample.name}
-                    </div>
-                  </Link>
-                ))}
+              <div className="relative w-full text-center"><div className="bg-white inline px-2">OR</div><div className="h-px border-t absolute -z-10 top-1/2 w-full" /></div>
+
+              <div>
+                <div className="font-semibold mb-4 text-xl text-center">
+                  Try our demo images
+                </div>
+
+                <div className="flex gap-5 flex-wrap justify-center">
+                  {config.sampleFiles.map((sample: any, index) => (
+                    <Link
+                      key={index}
+                      to={pathname + '?fileUrl=' + sample.viz2dFile}
+                      className="border p-1 w-80 rounded cursor-pointer hover:scale-105 duration-200"
+                    >
+                      <img
+                        src={sample.image}
+                        className="w-full aspect-video object-cover"
+                      />
+                      <div className="text-lg font-semibold mt-2 text-center">
+                        {sample.name}
+                      </div>
+                    </Link>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
         )}
       </>
     </Suspense>
-  )
-}
-
-function ConvertInfo() {
-  const [open, setOpen] = useState(false)
-
-  return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <button
-          type="button"
-          aria-label="How to convert files to Viz2D"
-          className="text-muted-foreground hover:text-foreground transition-colors h-fit"
-          onMouseEnter={() => setOpen(true)}
-          onMouseLeave={() => setOpen(false)}
-          onFocus={() => setOpen(true)}   // keyboard
-          onBlur={() => setOpen(false)}
-        >
-          <HelpCircle className="h-5 w-5" />
-        </button>
-      </PopoverTrigger>
-
-      <PopoverContent
-        onMouseEnter={() => setOpen(true)}
-        onMouseLeave={() => setOpen(false)}
-        className="max-w-56 p-3 space-y-2"
-      >
-        <p className="text-sm">
-          Don’t have a <strong>.viz2d</strong> file yet?
-        </p>
-
-        <Button className="bg-cyan-500 hover:bg-cyan-600 text-black" asChild>
-          <a
-            href="https://viz2d.com/convert"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Open converter <ArrowUpRight />
-          </a>
-        </Button>
-      </PopoverContent>
-    </Popover>
   )
 }
