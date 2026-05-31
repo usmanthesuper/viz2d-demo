@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useMemo, useRef, useState } from "react";
-import { VizEngine, TextureInfo, EngineOutput } from "@viz2d/sdk"; // adjust path
+import { CanvasEngine, TextureInfo } from "./canvas-engine";
 
 // ----------------------
 // Types
@@ -13,6 +13,7 @@ export type SegmentWithTexture = {
   mask: Uint32Array;
   area: number;
   maskedImage: string;
+  homography: number[] | null;
   texture?: TextureInfo;
   appliedCatalogTexture?: { image: string; name: string };
 };
@@ -20,12 +21,12 @@ export type SegmentWithTexture = {
 type ImageSize = { width: number; height: number };
 
 // ----------------------
-// Utils (unchanged)
+// Utils
 // ----------------------
 
 function createMaskedImage(
   mask: Uint32Array,
-  pixels: Uint8Array,
+  pixels: Uint8ClampedArray,
   width: number,
   height: number,
   maxWidth = 250,
@@ -50,7 +51,6 @@ function createMaskedImage(
   }
 
   const bw = borderWidth;
-
   for (let k = 0; k < mask.length; k++) {
     const i = mask[k];
     const x = i % width;
@@ -67,16 +67,12 @@ function createMaskedImage(
     for (let dy = -bw; dy <= bw; dy++) {
       const ny = y + dy;
       if (ny < 0 || ny >= height) continue;
-
       const row = ny * width;
-
       for (let dx = -bw; dx <= bw; dx++) {
         const nx = x + dx;
         if (nx < 0 || nx >= width) continue;
-
         const bi = row + nx;
         const idx = bi * 4;
-
         data[idx] = 0;
         data[idx + 1] = 255;
         data[idx + 2] = 255;
@@ -88,9 +84,7 @@ function createMaskedImage(
   const srcCanvas = document.createElement("canvas");
   srcCanvas.width = width;
   srcCanvas.height = height;
-
-  const srcCtx = srcCanvas.getContext("2d")!;
-  srcCtx.putImageData(new ImageData(data, width, height), 0, 0);
+  srcCanvas.getContext("2d")!.putImageData(new ImageData(data, width, height), 0, 0);
 
   const scale = Math.min(maxWidth / width, maxHeight / height, 1);
   const outW = Math.round(width * scale);
@@ -99,19 +93,26 @@ function createMaskedImage(
   const outCanvas = document.createElement("canvas");
   outCanvas.width = outW;
   outCanvas.height = outH;
-
-  const outCtx = outCanvas.getContext("2d")!;
-  outCtx.drawImage(srcCanvas, 0, 0, outW, outH);
+  outCanvas.getContext("2d")!.drawImage(srcCanvas, 0, 0, outW, outH);
 
   return outCanvas.toDataURL("image/png");
+}
+
+function base64ToUint8Array(b64: string): Uint8Array {
+  const binary = atob(b64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return bytes;
 }
 
 // ----------------------
 // Hook
 // ----------------------
 
+const API_URL = (import.meta.env.VITE_API_URL as string | undefined) ?? "http://localhost:8000";
+
 export function useVisualizer(allowedClasses: string[]) {
-  const engineRef = useRef(new VizEngine());
+  const engineRef = useRef(new CanvasEngine());
   const engine = engineRef.current;
 
   const [segments, setSegments] = useState<SegmentWithTexture[]>([]);
@@ -133,8 +134,7 @@ export function useVisualizer(allowedClasses: string[]) {
       .filter(
         (s) =>
           s.area > 2000 &&
-          (allowedClasses.length === 0 ||
-            allowedClasses.includes(s.className))
+          (allowedClasses.length === 0 || allowedClasses.includes(s.className))
       )
       .sort((a, b) => {
         if (a.texture && !b.texture) return -1;
@@ -145,17 +145,12 @@ export function useVisualizer(allowedClasses: string[]) {
 
   const segMap = useMemo(() => {
     if (!imageSize) return null;
-
-    const map = new Int32Array(
-      imageSize.width * imageSize.height
-    ).fill(-1);
-
+    const map = new Int32Array(imageSize.width * imageSize.height).fill(-1);
     for (const seg of filteredSegments) {
       for (const idx of seg.mask) {
         map[idx] = seg.id;
       }
     }
-
     return map;
   }, [filteredSegments, imageSize]);
 
@@ -163,36 +158,47 @@ export function useVisualizer(allowedClasses: string[]) {
   // Actions
   // ----------------------
 
-  const loadFile = useCallback(async (file: File) => {
-    setIsBundleLoading(true);
-    try {
-      const out: EngineOutput = await engine.loadViz2dFile(file);
+  const loadFile = useCallback(
+    async (file: File) => {
+      setIsBundleLoading(true);
+      setBundleLoaded(false);
+      try {
+        const form = new FormData();
+        form.append("file", file);
+        const res = await fetch(`${API_URL}/segment`, { method: "POST", body: form });
+        if (!res.ok) throw new Error(`Segmentation API error: ${res.statusText}`);
+        const data = await res.json();
 
-      const parsed: SegmentWithTexture[] = out.segments.map((s) => ({
-        id: s.id,
-        className: s.className,
-        mask: s.mask,
-        area: s.mask.length,
-        maskedImage: createMaskedImage(
-          s.mask,
-          out.image.pixels,
-          out.image.width,
-          out.image.height
-        ),
-      }));
+        const pixels = new Uint8ClampedArray(base64ToUint8Array(data.pixels).buffer);
+        engine.loadImage(pixels, data.width, data.height);
 
-      setSegments(parsed);
-      setImageSize({
-        width: out.image.width,
-        height: out.image.height,
-      });
+        const parsed: SegmentWithTexture[] = data.segments.map((s: {
+          id: number;
+          className: string;
+          mask: string;
+          homography: number[] | null;
+        }) => {
+          const mask = new Uint32Array(base64ToUint8Array(s.mask).buffer);
+          return {
+            id: s.id,
+            className: s.className,
+            mask,
+            area: mask.length,
+            homography: s.homography ?? null,
+            maskedImage: createMaskedImage(mask, pixels, data.width, data.height),
+          };
+        });
 
-      setBundleLoaded(true);
-      setImageVersion((v) => v + 1);
-    } finally {
-      setIsBundleLoading(false);
-    }
-  }, [engine]);
+        setSegments(parsed);
+        setImageSize({ width: data.width, height: data.height });
+        setBundleLoaded(true);
+        setImageVersion((v) => v + 1);
+      } finally {
+        setIsBundleLoading(false);
+      }
+    },
+    [engine]
+  );
 
   const applyTextureToSegment = useCallback(
     async (
@@ -203,26 +209,14 @@ export function useVisualizer(allowedClasses: string[]) {
     ) => {
       const seg = filteredSegments.find((s) => s.id === segmentId);
       if (!seg) return;
-
       setIsTextureLoading(true);
-
       try {
-        const texture = await engine.applyTexture(seg.mask, file, {
-          scale,
-        });
-
+        const texture = await engine.applyTexture(seg.mask, file, { scale }, seg.homography);
         setSegments((prev) =>
           prev.map((s) =>
-            s.id === segmentId
-              ? {
-                  ...s,
-                  texture,
-                  appliedCatalogTexture: catalog,
-                }
-              : s
+            s.id === segmentId ? { ...s, texture, appliedCatalogTexture: catalog } : s
           )
         );
-
         setImageVersion((v) => v + 1);
       } finally {
         setIsTextureLoading(false);
@@ -236,20 +230,14 @@ export function useVisualizer(allowedClasses: string[]) {
     async (segmentId: number, patch: Partial<TextureInfo>) => {
       const seg = filteredSegments.find((s) => s.id === segmentId);
       if (!seg?.texture) return;
-
       setIsTextureLoading(true);
-
       try {
-        const updated = await engine.updateTexture(seg.texture.id, patch);
-
+        const updated = engine.updateTexture(seg.texture.id, patch);
         setSegments((prev) =>
           prev.map((s) =>
-            s.id === segmentId
-              ? { ...s, texture: updated||undefined }
-              : s
+            s.id === segmentId ? { ...s, texture: updated ?? undefined } : s
           )
         );
-
         setImageVersion((v) => v + 1);
       } finally {
         setIsTextureLoading(false);
@@ -262,12 +250,9 @@ export function useVisualizer(allowedClasses: string[]) {
     async (segmentId: number) => {
       const seg = filteredSegments.find((s) => s.id === segmentId);
       if (!seg?.texture) return;
-
       setIsTextureLoading(true);
-
       try {
-        await engine.removeTexture(seg.texture.id);
-
+        engine.removeTexture(seg.texture.id);
         setSegments((prev) =>
           prev.map((s) =>
             s.id === segmentId
@@ -275,7 +260,6 @@ export function useVisualizer(allowedClasses: string[]) {
               : s
           )
         );
-
         setImageVersion((v) => v + 1);
       } finally {
         setIsTextureLoading(false);
@@ -294,12 +278,7 @@ export function useVisualizer(allowedClasses: string[]) {
       if (!ctx) return;
 
       const out = engine.getOutput();
-
-      const img = new ImageData(
-        new Uint8ClampedArray(out.pixels),
-        out.width,
-        out.height
-      );
+      const img = new ImageData(new Uint8ClampedArray(out.pixels), out.width, out.height);
 
       if (highlightSeg != null) {
         const seg = filteredSegments.find((s) => s.id === highlightSeg);

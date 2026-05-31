@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import VisualizerMain from "./visualizer-main"
 import { Button } from "@/components/ui/button"
-import { ArrowUpRight, FileIcon, Image, Loader, Loader2, Upload } from "lucide-react"
+import { Image, Loader, Loader2, Upload } from "lucide-react"
 import { Suspense } from "react"
 import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom"
 
@@ -18,52 +18,15 @@ export const config = {
   websiteUrl: 'https://viz2d.com',
   name: 'Viz2D',
   sampleFiles: [
-    {
-      name: 'Living Room 1',
-      image: '/assets/samples/1.jpg',
-      viz2dFile: '/assets/samples/1.viz2d'
-    },
-    {
-      name: 'Living Room 2',
-      image: '/assets/samples/2.jpg',
-      viz2dFile: '/assets/samples/2.viz2d'
-    },
-    {
-      name: 'Bed Room',
-      image: '/assets/samples/3.jpg',
-      viz2dFile: '/assets/samples/3.viz2d'
-    },
-    {
-      name: 'Bathoom',
-      image: '/assets/samples/4.jpg',
-      viz2dFile: '/assets/samples/4.viz2d'
-    },
-    {
-      name: 'Kitchen',
-      image: '/assets/samples/5.jpg',
-      viz2dFile: '/assets/samples/5.viz2d'
-    },
-    {
-      name: 'Garage',
-      image: '/assets/samples/6.jpg',
-      viz2dFile: '/assets/samples/6.viz2d'
-    },
-    {
-      name: 'Terasse',
-      image: '/assets/samples/7.jpg',
-      viz2dFile: '/assets/samples/7.viz2d'
-    },
-    {
-      name: 'Stairs',
-      image: '/assets/samples/8.jpg',
-      viz2dFile: '/assets/samples/8.viz2d'
-    },
-    {
-      name: 'Balcony',
-      image: '/assets/samples/9.jpg',
-      viz2dFile: '/assets/samples/9.viz2d'
-    },
-
+    { name: 'Living Room 1', image: '/assets/samples/1.jpg', viz2dFile: '/assets/samples/1.jpg' },
+    { name: 'Living Room 2', image: '/assets/samples/2.jpg', viz2dFile: '/assets/samples/2.jpg' },
+    { name: 'Bed Room',      image: '/assets/samples/3.jpg', viz2dFile: '/assets/samples/3.jpg' },
+    { name: 'Bathroom',      image: '/assets/samples/4.jpg', viz2dFile: '/assets/samples/4.jpg' },
+    { name: 'Kitchen',       image: '/assets/samples/5.jpg', viz2dFile: '/assets/samples/5.jpg' },
+    { name: 'Garage',        image: '/assets/samples/6.jpg', viz2dFile: '/assets/samples/6.jpg' },
+    { name: 'Terasse',       image: '/assets/samples/7.jpg', viz2dFile: '/assets/samples/7.jpg' },
+    { name: 'Stairs',        image: '/assets/samples/8.jpg', viz2dFile: '/assets/samples/8.jpg' },
+    { name: 'Balcony',       image: '/assets/samples/9.jpg', viz2dFile: '/assets/samples/9.jpg' },
   ],
   textureKeywords: ['wall', 'floor'],
   textures: [
@@ -144,8 +107,8 @@ function Main({ config }: { config: VisualizerType }) {
       type: "application/octet-stream",
     })
 
-    const file = new File([blob], "visualizer.viz2d", {
-      type: blob.type,
+    const file = new File([blob], "room.jpg", {
+      type: blob.type || "image/jpeg",
       lastModified: Date.now(),
     })
 
@@ -182,25 +145,16 @@ function Main({ config }: { config: VisualizerType }) {
             <img src={config.companyLogo} className="mx-auto mb-5 h-14 max-w-40 object-contain" />
 
             <div className="flex gap-5 justify-center flex-wrap">
-              <div className="border rounded p-4 flex flex-col item-center">
-                <div className="flex gap-2 font-bold mb-2 text-lg"><Image />Upload Image</div>
+              <div className="border rounded p-4 flex flex-col items-center gap-3">
+                <div className="flex gap-2 font-bold text-lg"><Image />Upload Room Image</div>
+                <p className="text-sm text-muted-foreground text-center max-w-xs">
+                  Upload a JPG or PNG photo of your room. AI will detect surfaces automatically.
+                </p>
                 <Button className="bg-cyan-500 hover:bg-cyan-600 text-black" asChild>
-                  <a
-                    href='https://viz2d.com/convert'
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    Open Converter <ArrowUpRight />
-                  </a>
-                </Button>
-              </div>
-              <div className="border rounded p-4 flex flex-col item-center">
-                <div className="flex gap-2 font-bold mb-2 text-lg"><FileIcon />Load Viz2D File</div>
-                <Button asChild>
                   <label htmlFor="fileinput" className="cursor-pointer">
                     <input
                       type="file"
-                      accept=".viz2d"
+                      accept=".jpg,.jpeg,.png"
                       id="fileinput"
                       className="hidden"
                       onChange={(e) => {
@@ -212,7 +166,7 @@ function Main({ config }: { config: VisualizerType }) {
                       }}
                     />
                     <Upload />
-                    Upload
+                    Upload Image
                   </label>
                 </Button>
               </div>

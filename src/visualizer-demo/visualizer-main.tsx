@@ -18,7 +18,7 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {VisualizerType} from "./index"
 import { useVisualizer } from "./use-visualizer";
-import { TextureInfo } from "@viz2d/sdk";
+import { TextureInfo } from "./canvas-engine";
 
 /* ---------------------------------------------------
  Helpers
